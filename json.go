@@ -1,6 +1,10 @@
 package rockjson
 
-import "errors"
+import (
+	"errors"
+	"encoding/json"
+	"reflect"
+)
 
 type JsonObject = map[string]interface{}
 type JsonArray = []interface{}
@@ -50,10 +54,21 @@ func (jsonobj JsonObject) GetString(key string, defaultstr string) (string, erro
 	}
 	return res, nil
 }
-func(jsonobj JsonObject) GetInt64(key string,defaultarg int64)(int64,error){
+func (jsonobj JsonObject) GetInt64(key string, defaultarg int64) (int64, error) {
 	obj := jsonobj[key]
 	if obj == nil {
 		return defaultarg, errors.New("key不存在")
 	}
-	return defaultarg,nil
+
+	switch obj.(type) {
+	case json.Number:
+		return obj.(json.Number).Int64()
+	case float32, float64:
+		return int64(reflect.ValueOf(obj).Float()), nil
+	case int, int8, int16, int32, int64:
+		return reflect.ValueOf(obj).Int(), nil
+	case uint, uint8, uint16, uint32, uint64:
+		return int64(reflect.ValueOf(obj).Uint()), nil
+	}
+	return defaultarg, errors.New("数据类型错误")
 }
